@@ -38,7 +38,7 @@ def generate_tei_output(df_iap, query_file):
             "EMPLOYEE_IDENTIFIER": df_input.iloc[:, 7],
             "ORDER_IDENTIFIER": df_input.iloc[:, 6],
             "DAY_DATE": temp_dates.dt.strftime('%m%d%Y'),
-            "HOURS_DAY": df_input['Hours'] * 100,
+            "HOURS_DAY": (df_input['Hours'] * 100).round().astype(int),
             "EMPLOYEE_NAME": df_input['Employee Name'],
             "PAY_RATE": 0, "BILL_RATE": 0, "PAY_RATE_OT": 0,
             "BILL_RATE_OT": 0, "PAY_RATE_DT": 0, "BILL_RATE_DT": 0,
