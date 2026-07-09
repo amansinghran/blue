@@ -19,7 +19,14 @@ with cent_co:
     if 'out' not in st.session_state: 
         st.session_state.out = None
 
-    if st.button('Submit') and source_file and query_file:
+    # Creating 3 columns inside cent_co to center the button
+    btn_left, btn_center, btn_right = st.columns([1, 1, 1])
+    
+    with btn_center:
+        submit_clicked = st.button('Submit', use_container_width=True)
+    # ------------------------------
+
+    if submit_clicked and source_file and query_file:
         
         try:
             customer_module = importlib.import_module(f"Customers.{selected_customer}")
