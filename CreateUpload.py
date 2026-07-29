@@ -1,53 +1,53 @@
 import pandas as pd
 from datetime import datetime
 
-def generate_tei_output(df_iap, query_file):
+def CSFgenerate_tei_output(df_customer, query_file):
 
-    df_query = pd.read_excel(query_file)
+    df_query = pd.read_excel(query_file, header=1, dtype=str)
     
-    Custname = query_file.name[:3].upper()
+    df_customer['Employee ID'] = df_customer['Employee ID'].astype(str).str.split('.').str[0].str.strip()
     
+    query_id_col = df_query.columns[0]
+    df_query[query_id_col] = df_query[query_id_col].astype(str).str.split('.').str[0].str.strip()
+
+    df_query_unique = df_query.drop_duplicates(subset=[query_id_col], keep='first')
+
     df_merged = pd.merge(
-        df_iap, 
-        df_query, 
+        df_customer,
+        df_query_unique, 
         left_on='Employee ID', 
-        right_on=df_query.columns[0], 
+        right_on=query_id_col, 
         how='left',
         indicator=True
     )
 
     error_mask = df_merged['_merge'] == 'left_only'
-    df_errors = df_iap[error_mask][['Employee ID', 'Employee Name', 'Date', 'Hours']].copy()
+    df_errors = df_merged.loc[error_mask, ['Employee ID', 'Employee Name', 'Date', 'Hours', 'Weekend']].copy()
 
     df_clean = df_merged[df_merged['_merge'] == 'both'].copy()
 
     def process_to_tei(df_input):
         if df_input.empty:
             return pd.DataFrame()
-            
-        temp_dates = pd.to_datetime(df_input['Date'], dayfirst=True)
-        days_to_add = (6 - temp_dates.dt.weekday) % 7
-        week_end_dates = temp_dates + pd.to_timedelta(days_to_add, unit='D')
-
         tei_data = {
-            "BRANCH_NUMBER": df_input.iloc[:, 5],
+            "BRANCH_NUMBER": df_input["Unit"].astype(int),
             "PROCESS_DATE": datetime.now().strftime("%m%d%y"),
             "PROCESS_TIME": datetime.now().strftime("%H%M%S"),
-            "CUSTOMER_CODE": df_input.iloc[:, 10],
+            "CUSTOMER_CODE": df_input["Customer"].astype(int),
             "TYPE4": "Type4",
-            "EMPLOYEE_IDENTIFIER": df_input.iloc[:, 7],
-            "ORDER_IDENTIFIER": df_input.iloc[:, 6],
-            "DAY_DATE": temp_dates.dt.strftime('%m%d%Y'),
+            "EMPLOYEE_IDENTIFIER": df_input["ID"].astype(str).str.split('.').str[0].str.zfill(11),
+            "ORDER_IDENTIFIER": df_input["Order Id"].astype(int),
+            "DAY_DATE": pd.to_datetime(df_input['Date']).dt.strftime('%d%m%Y'),
             "HOURS_DAY": (df_input['Hours'] * 100).round().astype(int),
             "EMPLOYEE_NAME": df_input['Employee Name'],
             "PAY_RATE": 0, "BILL_RATE": 0, "PAY_RATE_OT": 0,
             "BILL_RATE_OT": 0, "PAY_RATE_DT": 0, "BILL_RATE_DT": 0,
             "TIME_RPTG_CD": "", "EARNING_DEDUCTION": "",
             "FLAT_AMOUNT": 0, "MARKUP_PCT": 0, "OTH_EARN_DESCR": "",
-            "WEEK_END_DATE": week_end_dates.dt.strftime('%m%d%Y')
+            "WEEK_END_DATE": df_input['Weekend']
         }
         return pd.DataFrame(tei_data)
 
     df_tei = process_to_tei(df_clean)
 
-    return df_tei, df_errors, Custname
+    return df_tei, df_errors
