@@ -2,11 +2,12 @@ import pandas as pd
 
 def PPI(uploaded_file):
     
-    required_columns = ["Employee ID", "Grouped By Employee Name", "Grouped By Date", "Start time", "End time"]
+    required_columns = ["agency id", "Grouped By Employee Name", "Grouped By Date", "Start time", "End time"]
 
     df = pd.read_excel(uploaded_file, usecols=required_columns)
 
     df = df.rename(columns={
+        "agency id": "Employee ID",
         "Grouped By Employee Name": "Employee Name",
         "Grouped By Date": "Date"})
     
