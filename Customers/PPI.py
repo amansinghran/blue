@@ -19,12 +19,12 @@ def PPI(uploaded_file):
     df = df[df["Hours"] != 0]
     
     df["Employee ID"] = df["Employee ID"].astype(int)
-    df["Date"] = pd.to_datetime(df["Date"], format="mixed").dt.strftime("%d/%m/%Y")
+    df["Date"] = pd.to_datetime(df["Date"], format="mixed").dt.strftime("%m/%d/%Y")
     
     df_aggregated = df.groupby(["Employee ID", "Date"], as_index=False).agg(
         {"Hours": "sum", "Employee Name": "first"})
     
-    max_date = pd.to_datetime(df_aggregated["Date"], format="%d/%m/%Y").max()
+    max_date = pd.to_datetime(df_aggregated["Date"], format="%m/%d/%Y").max()
     df_aggregated["Weekend"] = pd.offsets.Week(weekday=6).rollforward(max_date).strftime("%m%d%Y")
     
     df_aggregated = df_aggregated[["Employee ID", "Employee Name", "Date", "Hours", "Weekend"]]
