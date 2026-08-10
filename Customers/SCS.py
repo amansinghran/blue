@@ -13,6 +13,7 @@ def SCS(uploaded_file):
     df = df[df["Hours"] != 0]
     
     df["Employee ID"] = df["Employee ID"].astype(str)
+    df["Hours"] = df["Hours"].astype(int)
     df["Date"] = pd.to_datetime(df["Date"], format="mixed").dt.strftime("%m/%d/%Y")
     
     df_aggregated = df.groupby(["Employee ID", "Date"], as_index=False).agg(
