@@ -3,6 +3,9 @@ import pandas as pd
 from datetime import datetime
 import importlib
 from CSFCreateUpload import CSFgenerate_tei_output
+from zoneinfo import ZoneInfo
+
+my_timezone = ZoneInfo("America/New_York")
 
 st.set_page_config(page_title="r-Blue", layout="wide")
 st.markdown("<h1 style='text-align:center;'> TEI Upload </h1>", unsafe_allow_html=True)
@@ -97,18 +100,18 @@ with cent_co:
             if tl_form_buffer:
                 tl_form_bytes = tl_form_buffer.getvalue()
 
-        ts = datetime.now().strftime("%m%d%y_%H%M%S")
+        ts = datetime.now(my_timezone).strftime("%m%d%y_%H%M%S")
 
         if selected_customer == "MED":
             names = [
-                f"RAN_{selected_customer}_{datetime.now().strftime('%Y%m%d_%H%M')}.csv",
-                f"RAN_{selected_customer}_{datetime.now().strftime('%Y%m%d_%H%M')}_Error.csv",
-                f"RAN_{selected_customer}_Time_and_Labor_{datetime.now().strftime('%m.%d')}.xlsx"]
+                f"RAN_{selected_customer}_{datetime.now(my_timezone).strftime('%Y%m%d_%H%M')}.csv",
+                f"RAN_{selected_customer}_{datetime.now(my_timezone).strftime('%Y%m%d_%H%M')}_Error.csv",
+                f"RAN_{selected_customer}_Time_and_Labor_{datetime.now(my_timezone).strftime('%m.%d')}.xlsx"]
         else:
             names = [
                 f"TC_{selected_customer}_{ts}.csv", 
                 f"TC_{selected_customer}_{ts}_Error.csv",
-                f"{selected_customer}_Time_&_Labor_Form_{datetime.now().strftime('%m.%d')}.xlsx"]
+                f"{selected_customer}_Time_&_Labor_Form_{datetime.now(my_timezone).strftime('%m.%d')}.xlsx"]
 
         st.session_state.out = {
             "tei": df_tei.to_csv(index=False).encode('utf-8'),  # type: ignore
