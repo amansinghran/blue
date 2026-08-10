@@ -4,7 +4,7 @@ def SCS(uploaded_file):
     
     required_columns = ["Badge Number", "Last Name", "First Name", "Date", "Hours"]
 
-    df = pd.read_excel(uploaded_file, usecols=required_columns)
+    df = pd.read_excel(uploaded_file, sheet_name="Employee Day Summary", usecols=required_columns, dtype=str)
 
     df = df.rename(columns={"Badge Number": "Employee ID"})
     
@@ -12,7 +12,7 @@ def SCS(uploaded_file):
     df = df.dropna(subset=["Employee ID", "Date", "Hours"])
     df = df[df["Hours"] != 0]
     
-    df["Employee ID"] = df["Employee ID"].astype(int)
+    df["Employee ID"] = df["Employee ID"].astype(str)
     df["Date"] = pd.to_datetime(df["Date"], format="mixed").dt.strftime("%m/%d/%Y")
     
     df_aggregated = df.groupby(["Employee ID", "Date"], as_index=False).agg(
