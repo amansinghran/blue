@@ -1,5 +1,8 @@
 import pandas as pd
 from datetime import datetime
+from zoneinfo import ZoneInfo
+
+my_timezone = ZoneInfo("America/New_York")
 
 def CSFgenerate_tei_output(df_customer, query_file):
 
@@ -30,8 +33,8 @@ def CSFgenerate_tei_output(df_customer, query_file):
             return pd.DataFrame()
         tei_data = {
             "BRANCH_NUMBER": df_input["Unit"].astype(int),
-            "PROCESS_DATE": datetime.now().strftime("%m%d%y"),
-            "PROCESS_TIME": datetime.now().strftime("%H%M%S"),
+            "PROCESS_DATE": datetime.now(my_timezone).strftime("%m%d%y"),
+            "PROCESS_TIME": datetime.now(my_timezone).strftime("%H%M%S"),
             "CUSTOMER_CODE": df_input["Customer"].astype(int),
             "TYPE4": "Type4",
             "EMPLOYEE_IDENTIFIER": df_input["ID"].astype(str).str.split('.').str[0].str.zfill(11),
