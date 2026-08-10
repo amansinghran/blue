@@ -63,7 +63,7 @@ with cent_co:
             st.error(f"Module {selected_customer} found, but function '{selected_customer}' is missing inside it.")
             st.stop()
 
-        CUSTOM_TEI_CUSTOMERS = {"FSL", "LPC"}
+        CUSTOM_TEI_CUSTOMERS = {"FSL", "LPC", "MED"}
 
         df_parsed = pd.DataFrame()
 
