@@ -39,7 +39,7 @@ def CSFgenerate_tei_output(df_customer, query_file):
             "TYPE4": "Type4",
             "EMPLOYEE_IDENTIFIER": df_input["ID"].astype(str).str.split('.').str[0].str.zfill(11),
             "ORDER_IDENTIFIER": df_input["Order Id"],
-            "DAY_DATE": pd.to_datetime(df_input['Date']).dt.strftime('%m%d%Y'),
+            "DAY_DATE": pd.to_datetime(df_input['Date'], errors='coerce').dt.strftime('%m%d%Y'),
             "HOURS_DAY": (df_input['Hours'] * 100).round().astype(int),
             "EMPLOYEE_NAME": df_input['Employee Name'],
             "PAY_RATE": 0, "BILL_RATE": 0, "PAY_RATE_OT": 0,
