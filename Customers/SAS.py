@@ -14,7 +14,7 @@ def SAS(uploaded_file):
             for val in row.dropna():
                 match = re.search(r"^(.*?)\s*\((.*?)\)$", str(val).strip())
                 if match:
-                    emp_name, emp_id = match.group(1).strip(), int(match.group(2).strip())
+                    emp_name, emp_id = match.group(1).strip(), str(match.group(2).strip())
                     break
             continue
     
@@ -36,7 +36,7 @@ def SAS(uploaded_file):
         {"Hours": "sum", "Employee Name": "first"})
     
     max_date = pd.to_datetime(df_aggregated["Date"], format="%m/%d/%Y").max()
-    df_aggregated["Weekend"] = pd.offsets.Week(weekday=6).rollforward(max_date).strftime("%m%d%Y")
+    df_aggregated["Weekend"] = pd.offsets.Week(weekday=5).rollforward(max_date).strftime("%m%d%Y")
     df_aggregated = df_aggregated[["Employee ID", "Employee Name", "Date", "Hours", "Weekend"]]
 
     return df_aggregated
