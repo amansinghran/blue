@@ -2,16 +2,17 @@ import pandas as pd
 
 def SWB(uploaded_file):
     
-    required_columns = ["Employee ID", "Name", "Apply Date", "hours"]
-
     df_raw = pd.read_excel(uploaded_file, header=None)
-    header_idx = df_raw[df_raw.isin([required_columns[0]]).any(axis=1)].index[0]
+    header_idx = df_raw[df_raw.isin(["Employee ID"]).any(axis=1)].index[0]    
     
-    df = pd.read_excel(uploaded_file, usecols=required_columns, header=header_idx)
+    df = pd.read_excel(uploaded_file, header=header_idx)
+    
+    df.columns = df.columns.str.strip().str.lower()
     
     df = df.rename(columns={
-        "Name": "Employee Name",
-        "Apply Date": "Date",
+        "employee id": "Employee ID",
+        "name": "Employee Name",
+        "apply date": "Date",
         "hours": "Hours"})
     
     df = df.dropna(subset=["Employee ID", "Date", "Hours"])
