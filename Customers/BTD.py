@@ -4,8 +4,20 @@ def BTD(uploaded_file):
 
     required_columns = ["Employee Number", "Employee Name", "Shift Date", "Paid Hours"]
 
-    df = pd.read_excel(uploaded_file, usecols=required_columns)
+    all_sheets = pd.read_excel(uploaded_file, sheet_name=None, nrows=0)
 
+    target_sheet = None
+    for sheet_name, sheet_df in all_sheets.items():
+        if set(required_columns).issubset(sheet_df.columns):
+            target_sheet = sheet_name
+            break
+
+    if target_sheet is None:
+        raise ValueError("Could not find a sheet with all required columns.")
+
+    df = pd.read_excel(uploaded_file, sheet_name=target_sheet, usecols=required_columns)
+
+    
     df = df.rename(columns={
         "Employee Number": "Employee ID",
         "Shift Date": "Date",
