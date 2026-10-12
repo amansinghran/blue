@@ -3,7 +3,9 @@ import pandas as pd
 from datetime import datetime
 import importlib
 from CSFCreateUpload import CSFgenerate_tei_output
+from Customer_list import customer_options
 from zoneinfo import ZoneInfo
+import io
 
 my_timezone = ZoneInfo("America/New_York")
 
@@ -13,22 +15,6 @@ st.markdown("<h1 style='text-align:center;'> TEI Upload </h1>", unsafe_allow_htm
 left_co, cent_co, right_co = st.columns([1, 2, 1])
 
 with cent_co:
-    customer_options = [
-        "ADL - Adler Pelzer",
-        "ARN - Ariens Company",
-        "BTD - Barrett Distribution",
-        "DHL - DHL_Spherion",
-        "FSL - FLEX - Salt Lake City, UT - Spherion",
-        "IAP - International Auto Processing, Inc",
-        "MED - Medtronics",
-        "MEI - MEI Corporation",
-        "NSY - Nasoya Foods USA LLC",
-        "PPI - Papa",
-        "SCK - Saddle Creek",
-        "SAS - Samsung",
-        "SCS - Schutz Container Systems, Inc",
-        "SWB - Smith & Wesson Brands, Inc",
-        "YKK - YKK USA, Inc"]
 
     full_selection = st.selectbox("Select Customer", options=customer_options)
     selected_customer = full_selection.split("-")[0].strip().upper()
@@ -66,7 +52,7 @@ with cent_co:
             st.error(f"Module {selected_customer} found, but function '{selected_customer}' is missing inside it.")
             st.stop()
 
-        CUSTOM_TEI_CUSTOMERS = {"FSL", "LPC", "MED"}
+        CUSTOM_TEI_CUSTOMERS = {"CAK", "FSL", "HLF", "LPC", "MED", "MLG", "RKL", "SCK"}
 
         df_parsed = pd.DataFrame()
 
@@ -85,9 +71,13 @@ with cent_co:
         else:
             res = CSFgenerate_tei_output(df_parsed, query_file)
 
+        # HANDLE SICK DATAFRAME
+        df_sick = pd.DataFrame()
         if isinstance(res, (tuple, list)):
             df_tei = res[0]
             df_err = res[1] if len(res) > 1 else pd.DataFrame()
+            if len(res) > 2:
+                df_sick = res[2]  # Capture df_sick if returned as 3rd item
         else:
             df_tei = res
             df_err = pd.DataFrame()
@@ -106,38 +96,75 @@ with cent_co:
             names = [
                 f"RAN_{selected_customer}_{datetime.now(my_timezone).strftime('%Y%m%d_%H%M')}.csv",
                 f"RAN_{selected_customer}_{datetime.now(my_timezone).strftime('%Y%m%d_%H%M')}_Error.csv",
-                f"RAN_{selected_customer}_Time_and_Labor_{datetime.now(my_timezone).strftime('%m.%d')}.xlsx"]
+                f"RAN_{selected_customer}_Time_and_Labor_{datetime.now(my_timezone).strftime('%m.%d')}.xlsx",
+                f"RAN_{selected_customer}_{ts}_Sick.xlsx"]
         else:
             names = [
                 f"TC_{selected_customer}_{ts}.csv", 
                 f"TC_{selected_customer}_{ts}_Error.csv",
-                f"{selected_customer}_Time_&_Labor_Form_{datetime.now(my_timezone).strftime('%m.%d')}.xlsx"]
+                f"{selected_customer}_Time_&_Labor_Form_{datetime.now(my_timezone).strftime('%m.%d')}.xlsx",
+                f"TC_{selected_customer}_{ts}_Sick.xlsx"]
+
+        sick_excel_bytes = None
+        if not df_sick.empty:
+            sick_buffer = io.BytesIO()
+            with pd.ExcelWriter(sick_buffer, engine="openpyxl") as writer:
+                df_sick.to_excel(writer, sheet_name="Sick", index=False)
+            sick_excel_bytes = sick_buffer.getvalue()
 
         st.session_state.out = {
             "tei": df_tei.to_csv(index=False).encode('utf-8'),  # type: ignore
             "err": df_err.to_csv(index=False).encode('utf-8') if not df_err.empty else None,
+            "sick": sick_excel_bytes,
             "tl_form": tl_form_bytes,
             "names": names}
         
         st.success(f"Files available to download for {full_selection}!")
 
     if st.session_state.out:
-        if st.session_state.out.get("tl_form"):
-            col1, col2, col3 = st.columns(3)
-        else:
-            col1, col2 = st.columns(2)
-            col3 = None
-
-        col1.download_button("📥 Download Validated CSV", st.session_state.out["tei"], st.session_state.out["names"][0], "text/csv")
         
-        if st.session_state.out["err"]:
-            col2.download_button("⚠️ Download Error CSV", st.session_state.out["err"], st.session_state.out["names"][1], "text/csv")
-        else:
-            col2.info("No errors found.")
+        num_cols = 2  # Standard: Validated CSV + Error CSV
+        if st.session_state.out.get("sick"):
+            num_cols += 1
+        if st.session_state.out.get("tl_form"):
+            num_cols += 1
 
-        # Display T&L Form download button if available
-        if col3 and st.session_state.out.get("tl_form"):
-            col3.download_button(
+        cols = st.columns(num_cols)
+        col_idx = 0
+
+# 1. Download Validated CSV
+        cols[col_idx].download_button(
+            "📥 Download Validated CSV", 
+            st.session_state.out["tei"], 
+            st.session_state.out["names"][0], 
+            "text/csv"
+        )
+        col_idx += 1
+
+        # 2. Download Error CSV
+        if st.session_state.out["err"]:
+            cols[col_idx].download_button(
+                "⚠️ Download Error CSV", 
+                st.session_state.out["err"], 
+                st.session_state.out["names"][1], 
+                "text/csv"
+            )
+        else:
+            cols[col_idx].info("No errors found.")
+        col_idx += 1
+
+        # 3. Download Sick CSV (If available)
+        if st.session_state.out.get("sick"):
+            cols[col_idx].download_button(
+                "🤒 Download Sick Time Data", 
+                st.session_state.out["sick"], 
+                st.session_state.out["names"][3], 
+                "application/vnd.openpyxlformat-officedocument.spreadsheetml.sheet")
+            col_idx += 1
+
+        # 4. Download Time & Labor Form (If available)
+        if st.session_state.out.get("tl_form"):
+            cols[col_idx].download_button(
                 "📋 Download Time & Labor Form",
                 st.session_state.out["tl_form"],
                 st.session_state.out["names"][2],
