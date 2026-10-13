@@ -15,10 +15,10 @@ def ADR(uploaded_file):
         "Totaled Amount": "Hours"})
 
     df = df.dropna(subset=["Date"])
+    df["Hours"] = pd.to_numeric(df["Hours"], errors="coerce").fillna(0)
     df = df[df["Hours"] != 0]
     df["Employee ID"] = df["Employee ID"].astype(str)
     df["Date"] = pd.to_datetime(df["Date"]).dt.strftime("%m/%d/%Y")
-    df = df[df["Hours"] != 0]
     
     df_aggregated = (
         df.groupby(["Employee ID", "Date"], as_index=False)
