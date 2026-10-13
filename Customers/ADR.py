@@ -18,7 +18,8 @@ def ADR(uploaded_file):
     df = df[df["Hours"] != 0]
     df["Employee ID"] = df["Employee ID"].astype(str)
     df["Date"] = pd.to_datetime(df["Date"]).dt.strftime("%m/%d/%Y")
-
+    df = df[df["Hours"] != 0]
+    
     df_aggregated = (
         df.groupby(["Employee ID", "Date"], as_index=False)
         .agg({"Hours": "sum", "Employee Name": "first"}))
