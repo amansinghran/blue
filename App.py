@@ -8,6 +8,8 @@ from zoneinfo import ZoneInfo
 import io
 
 my_timezone = ZoneInfo("America/New_York")
+CUSTOM_TEI_CUSTOMERS = {"CAK", "FSL", "HLF", "LPC", "MED", "MLG", "RKL"}
+DUAL_FILE_CUSTOMERS = {"SCK", "TWS", "PAR"}
 
 st.set_page_config(page_title="r-Blue", layout="wide")
 st.markdown("<h1 style='text-align:center;'> TEI Upload </h1>", unsafe_allow_html=True)
@@ -23,10 +25,11 @@ with cent_co:
     source_file_1 = None
     source_file_2 = None
 
-    if selected_customer == "SCK":
+    if selected_customer in DUAL_FILE_CUSTOMERS:
         source_file_1 = st.file_uploader("Source File 1", type=["xls", "xlsx", "csv"], key="src1")
-        source_file_2 = st.file_uploader("Source File 2", type=["xls", "xlsx", "csv"], key="src2")
-        source_files_ready = source_file_1 is not None and source_file_2 is not None
+        source_file_2 = st.file_uploader("Source File 2 (Optional)", type=["xls", "xlsx", "csv"], key="src2")
+        # FIX 1: Allow processing if at least Source File 1 is uploaded
+        source_files_ready = source_file_1 is not None
     else:
         source_file = st.file_uploader("Source File", type=["xls", "xlsx", "csv"], key="src_single")
         source_files_ready = source_file is not None
@@ -52,14 +55,12 @@ with cent_co:
             st.error(f"Module {selected_customer} found, but function '{selected_customer}' is missing inside it.")
             st.stop()
 
-        CUSTOM_TEI_CUSTOMERS = {"CAK", "FSL", "HLF", "LPC", "MED", "MLG", "RKL"}
-
         df_parsed = pd.DataFrame()
 
         # Parse source files based on customer needs
-        if selected_customer == "SCK":
-            if source_file_1 is not None and source_file_2 is not None:
-                df_parsed = customer_parse_func(source_file_1, source_file_2)
+        if selected_customer in DUAL_FILE_CUSTOMERS:
+            # Pass source_file_2 if uploaded, otherwise pass None as the second argument
+            df_parsed = customer_parse_func(source_file_1, source_file_2)
         else:
             if source_file is not None:
                 df_parsed = customer_parse_func(source_file)
@@ -113,7 +114,7 @@ with cent_co:
             sick_excel_bytes = sick_buffer.getvalue()
 
         st.session_state.out = {
-            "tei": df_tei.to_csv(index=False).encode('utf-8'),  # type: ignore
+            "tei": df_tei.to_csv(index=False).encode('utf-8'),
             "err": df_err.to_csv(index=False).encode('utf-8') if not df_err.empty else None,
             "sick": sick_excel_bytes,
             "tl_form": tl_form_bytes,
@@ -132,13 +133,12 @@ with cent_co:
         cols = st.columns(num_cols)
         col_idx = 0
 
-# 1. Download Validated CSV
+        # 1. Download Validated CSV
         cols[col_idx].download_button(
             "📥 Download Validated CSV", 
             st.session_state.out["tei"], 
             st.session_state.out["names"][0], 
-            "text/csv"
-        )
+            "text/csv")
         col_idx += 1
 
         # 2. Download Error CSV
@@ -147,25 +147,26 @@ with cent_co:
                 "⚠️ Download Error CSV", 
                 st.session_state.out["err"], 
                 st.session_state.out["names"][1], 
-                "text/csv"
-            )
+                "text/csv")
         else:
             cols[col_idx].info("No errors found.")
         col_idx += 1
 
         # 3. Download Sick CSV (If available)
         if st.session_state.out.get("sick"):
+            # FIX 2: Corrected MIME type string
             cols[col_idx].download_button(
                 "🤒 Download Sick Time Data", 
                 st.session_state.out["sick"], 
                 st.session_state.out["names"][3], 
-                "application/vnd.openpyxlformat-officedocument.spreadsheetml.sheet")
+                "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")
             col_idx += 1
 
         # 4. Download Time & Labor Form (If available)
         if st.session_state.out.get("tl_form"):
+            # FIX 2: Corrected MIME type string
             cols[col_idx].download_button(
                 "📋 Download Time & Labor Form",
                 st.session_state.out["tl_form"],
                 st.session_state.out["names"][2],
-                "application/vnd.openpyxlformat-officedocument.spreadsheetml.sheet")
+                "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")
